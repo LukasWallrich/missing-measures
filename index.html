@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missing Measures</title>
+<meta name="description" content="How the model in Paolini et al. (2024) turns missing negative-contact measures into a negativity bias, shown with a thought experiment and the meta-analytic data.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#f6f7f5;--panel:#fff;--fg:#1d2522;--muted:#5b6862;--line:#d6dcd8;--grid:#e8ece9;--accent:#17614f;
+  --fixed:#a23a1d;--zero:#6b7570;--est:#2f5f9e;--dot:#1d2522;--pos:#2a7f8f;--neg:#b4521f;--bartext:#fff;
+  --serif:"Newsreader",Georgia,serif;--sans:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141917;--panel:#1c2320;--fg:#e4e9e6;--muted:#9eaba5;--line:#333e39;--grid:#252e2a;--accent:#6cc3ac;
+  --fixed:#ee8d6f;--zero:#a3aea9;--est:#8fb4ea;--dot:#e4e9e6;--pos:#5bb3c2;--neg:#e58a56;--bartext:#141917;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141917;--panel:#1c2320;--fg:#e4e9e6;--muted:#9eaba5;--line:#333e39;--grid:#252e2a;--accent:#6cc3ac;
+  --fixed:#ee8d6f;--zero:#a3aea9;--est:#8fb4ea;--dot:#e4e9e6;--pos:#5bb3c2;--neg:#e58a56;--bartext:#141917;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 16px 80px;display:grid;gap:56px}
+.eyebrow{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(32px,5.4vw,52px);line-height:1.05;margin:0 0 16px;text-wrap:balance;max-width:20ch}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3.4vw,32px);line-height:1.15;margin:0 0 12px;text-wrap:balance}
+p{margin:0 0 12px;max-width:66ch}
+.lede{font-family:var(--serif);font-size:clamp(19px,2.3vw,22px);line-height:1.45;max-width:60ch}
+a{color:var(--accent)}
+i.v{font-family:var(--serif)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* Scrollytelling: text steps scroll past a pinned chart */
+.story{display:grid;gap:0 32px;margin-top:8px;align-items:start}
+@media (min-width:880px){.story{grid-template-columns:minmax(280px,340px) minmax(0,1fr)}.story .chart{position:sticky;top:max(16px,calc(50vh - 300px))}}
+@media (max-width:879px){.story .chart{order:-1;position:sticky;top:0;z-index:2;box-shadow:0 8px 16px -12px rgba(0,0,0,.35)}.story .chart svg{max-height:38vh;width:auto;max-width:100%;margin:0 auto}.story .chart figcaption{display:none}}
+@media (max-width:879px) and (max-height:560px){.story .chart{position:static;box-shadow:none}}
+@media (min-width:880px){.story .chart svg{max-height:calc(100vh - 120px);width:auto;max-width:100%;margin:0 auto}}
+.step{min-height:65vh;padding:4px 0 0 18px;border-left:2px solid var(--line);color:var(--muted);transition:color .35s,border-color .35s}
+.step:last-child{min-height:75vh}
+.step.on{border-left-color:var(--fg);color:var(--fg)}
+.step h3{font-size:16px;font-weight:600;margin:0 0 6px}
+.step h3 .k{font-family:var(--mono);font-size:13px;color:var(--muted);margin-right:8px}
+.sb p{font-size:15.5px;margin:2px 0 10px}
+.note{font-size:13px;color:var(--muted);margin-top:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--panel);margin:4px 0 10px}
+.seg button{all:unset;cursor:pointer;font-size:14px;padding:5px 14px;border-radius:999px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+.chart{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 10px 4px}
+.chart figcaption{font-size:13px;color:var(--muted);padding:4px 6px 6px}
+.key{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted);padding:2px 6px 4px}
+.key span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:var(--c)}
+.mfixed{color:var(--fixed)}.mzero{color:var(--zero)}.mest{color:var(--est)}
+table.res{border-collapse:collapse;width:100%;font-size:14px;margin:4px 0 10px}
+table.res th,table.res td{padding:5px 8px 5px 0;text-align:left;border-bottom:1px solid var(--line)}
+table.res th{font-weight:500;font-size:12px;color:var(--muted)}
+table.res td.n{font-family:var(--mono);font-size:13px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.res tr:last-child td{border-bottom:0}
+
+/* SVG */
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--sans);font-size:13px;fill:var(--muted)}
+svg .halo{paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round}
+svg .ax{fill:var(--fg);font-size:13.5px}
+svg .lab{font-weight:600;font-size:14px}
+svg .t{transition:opacity .45s ease}
+svg .mv{transition:transform .65s cubic-bezier(.3,.7,.3,1),opacity .45s ease}
+svg .off{opacity:0;pointer-events:none}
+svg .ln{stroke-dasharray:1;stroke-dashoffset:1}
+svg .ln.drawn{stroke-dashoffset:0;transition:stroke-dashoffset .7s ease .15s}
+@media (max-width:560px){svg text{font-size:17px}svg .ax{font-size:17px}svg .lab{font-size:18px}}
+@media (prefers-reduced-motion:reduce){svg .t,svg .mv,svg .ln.drawn,.step{transition:none}}
+
+details{border-top:1px solid var(--line);padding-top:14px;max-width:760px}
+summary{cursor:pointer;font-family:var(--serif);font-size:20px;font-weight:600}
+details p,details li{font-size:15px;color:var(--fg)}
+details ul{padding-left:20px;margin:10px 0}
+footer{font-size:13px;color:var(--muted)}
+.demo{max-width:760px;margin:18px 0 16px}
+.slider{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:4px 8px 10px;font-size:14px}
+.slider input{flex:1 1 220px;accent-color:var(--fg)}
+.slider output{font-family:var(--mono);min-width:3.5em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Reanalysis of Paolini et al. (2024), <i>Psychological Bulletin</i></div>
+  <h1>How missing measures can look like a negativity bias</h1>
+  <p class="lede">The published meta-analysis found that negative intergroup contact is more strongly linked to prejudice than positive contact. In its multilevel analysis of all effects, that difference depends on how the model links each sample's positive- and negative-contact effects. A thought experiment shows what that link does, and the data show the same pattern.</p>
+</header>
+
+<section id="schools" aria-labelledby="h-schools">
+  <div class="eyebrow">Part 1 · A thought experiment</div>
+  <h2 id="h-schools">The schools that skipped the math test</h2>
+  <p>Every school in a district took the reading test; the weaker schools skipped the optional math test. Three models estimate the district's math average. They differ only in what they assume about how reading and math go together.</p>
+  <div class="story" id="story-schools">
+    <div class="steps"></div>
+    <figure class="chart">
+      <div class="key"><span style="--c:var(--fixed)">Fixed total</span><span style="--c:var(--zero)">No link</span><span style="--c:var(--est)">Link estimated</span></div>
+      <svg id="plot-schools" viewBox="0 0 560 470" role="img" aria-label="Reading and math scores of eight schools, with each model's estimate of the district math average"></svg>
+      <figcaption>Each point is a school.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section aria-labelledby="h-why">
+  <div class="eyebrow">The link to contact</div>
+  <h2 id="h-why">Why the published model implies a fixed total</h2>
+  <p>The model gives each paper, study and sample a random intercept, which shifts all of that cluster's effects by the same amount. That is the standard way to handle several effects from one sample. But positive-contact effects are negative correlations (more positive contact, less prejudice), and negative-contact effects are positive. A shift that moves both the same way weakens one association and strengthens the other by the same amount, so in the model their combined strength is the same in every sample.</p>
+  <figure class="chart demo">
+    <svg id="plot-intercept" viewBox="0 0 560 200" role="img" aria-label="A sample's two effects shifted by a shared intercept, with their strengths and constant total"></svg>
+    <label class="slider" for="u">Move this sample's random intercept <input type="range" id="u" min="-25" max="25" value="0"><output id="uout" for="u">0</output></label>
+  </figure>
+  <p class="note">This holds for the model's true effects on the Fisher <i>z</i> scale; observed effects still vary through sampling error.</p>
+  <p>The model therefore treats every sample like a school with a fixed reading-plus-math total. Positive contact plays reading, negative contact plays math, and the 105 samples that measured only positive contact, which have weaker associations, are the schools that skipped the math test.</p>
+</section>
+
+<section id="contact" aria-labelledby="h-contact">
+  <div class="eyebrow">Part 2 · The meta-analytic data</div>
+  <h2 id="h-contact">The same pattern in the contact samples</h2>
+  <p>Each point is one of the 191 samples in the revised pool, placed by the strength of its two associations with prejudice.</p>
+  <div class="story" id="story-contact">
+    <div class="steps"></div>
+    <figure class="chart">
+      <div class="key"><span style="--c:var(--fixed)">Fixed total (published specification)</span><span style="--c:var(--zero)">No link</span><span style="--c:var(--est)">Link estimated</span></div>
+      <svg id="plot-contact" viewBox="0 0 560 500" role="img" aria-label="Strength of positive- and negative-contact associations by sample, with each model's estimated means"></svg>
+    </figure>
+  </div>
+  <p class="note">Positive-contact correlations are sign-reversed, so higher means stronger in the expected direction. Lines show the direction of each model's adjustment from the both-valence average.</p>
+</section>
+
+<details>
+  <summary>How the estimates are computed</summary>
+  <ul>
+    <li><b>Schools.</b> Bivariate random-effects meta-analysis with a between-school SD of 10 and a standard error of 5 for every score. The correlation between true reading and math scores is −1 (fixed total), 0 (no link) or estimated by maximum likelihood. Because of the standard errors, the fixed-total line is a little flatter than −1.</li>
+    <li><b>Contact.</b> Three-level models (effects in samples in papers) fitted to Fisher <i>z</i> values of the 827 effects in the revised pool; the fixed total holds on that scale. The published fit to all 936 effects gives Δ<i>r</i> = .080 (Supplement S3.1). Fitted means as in Supplement S3.3; Δ<i>r</i> and 95% CIs (REML, CR2) as in Table S11. Each point is a sample's back-transformed mean <i>z</i> per valence; group averages weight samples equally.</li>
+    <li>No model imputes missing measurements. The assumed correlation decides how measurements of one kind inform the mean of the other.</li>
+  </ul>
+</details>
+
+<footer>Data: Paolini et al. (2024), revised pool as described in the Supplement.</footer>
+</div>
+
+<script id="data" type="application/json">
+{"both":[[0.535,0.401],[0.661,0.606],[0.26,0.136],[0.339,0.351],[0.6,0.54],[0.322,0.552],[0.32,0.38],[0.217,0.191],[0.296,0.186],[0.217,0.29],[0.29,0.314],[0.336,0.433],[0.324,0.278],[0.374,0.458],[0.426,0.37],[0.404,0.227],[0.385,0.08],[0.278,0.129],[0.414,0.424],[0.206,0.403],[0.34,0.14],[0.35,0.21],[0.48,0.35],[0.405,0.442],[0.503,0.215],[0.356,0.34],[0.24,0.19],[0.499,0.449],[0.216,0.304],[0.36,0.38],[0.34,0.22],[0.163,0.104],[0.296,0.296],[0.35,0.089],[0.647,0.578],[0.572,0.498],[0.59,0.493],[0.514,0.422],[0.465,0.44],[0.267,0.401],[0.6,0.548],[0.653,0.662],[0.234,0.353],[0.28,0.46],[0.208,0.301],[0.183,0.47],[0.46,0.31],[0.568,0.401],[-0.64,-0.6],[0.38,-0.19],[0.521,0.435],[0.425,0.192],[0.453,0.337],[0.417,0.396],[0.64,0.41],[0.228,0.413],[0.437,0.364],[0.36,0.347],[0.527,0.496],[0.447,0.448],[0.399,0.37],[0.257,0.246],[0.342,0.123],[0.398,0.228],[0.37,0.34],[0.2,0.243],[0.246,0.079],[0.075,0.106],[0.284,0.294],[0.383,0.318],[0.383,0.178],[0.466,0.247],[0.255,0.368],[0.473,0.387],[0.27,0.47],[0.497,0.373],[0.693,0.656]],"pos":[-0.52,0.207,0.445,0.33,0.256,0.28,0.156,0.26,0.37,0.332,0.395,0.205,0.15,0.08,0.189,0.16,0.22,0.295,0.21,0.21,0.33,0.02,0.181,0.175,0.09,0.19,0.135,0.096,0.112,0.35,0.157,0.39,0.227,0.425,0.169,0.201,0.19,0.097,0.116,0.167,0.111,0.04,0.41,0.32,0.307,-0.28,0.483,0.292,0.213,0.54,0.567,0.417,0.564,0.397,0.21,0.11,-0.25,-0.315,-0.03,-0.24,-0.055,0.125,0,0.278,0.31,0.17,0.43,0.016,0.254,0.23,-0.201,0.398,0.312,-0.33,0.265,0.252,-0.18,0.308,0.224,0.12,0.065,0.04,0.295,0.413,0.566,0.266,0.508,0.253,0.54,0.093,0.078,0.028,0.607,0.285,0.246,0.3,0.011,0.354,0.357,0.127,0.27,0.1,-0.01,0.33,0.773],"neg":[-0.334,0.335,-0.48,0.432,0.314,-0.45,0.52,0.738,0.797],"mean":{"both_p":0.3802,"both_n":0.3317,"pos_only":0.216,"neg_only":0.2599},"cor":{"all":0.71,"trimmed":0.54},"rho":{"sample":0.6906,"paper":0.8773},"both_fixed":-0.0393,"fits":{"fixed":{"p":0.2773,"n":0.3807,"d":0.1034,"lo":0.022,"hi":0.1848},"zero":{"p":0.2755,"n":0.3088,"d":0.0331,"lo":-0.028,"hi":0.0942},"est":{"p":0.272,"n":0.2346,"d":-0.0375,"lo":-0.0782,"hi":0.0033}}}</script>
+<script>
+"use strict";
+const DATA = JSON.parse(document.getElementById("data").textContent);
+const NS = "http://www.w3.org/2000/svg";
+
+// ---------- Bivariate random-effects fit with known tau and sigma ----------
+function fitRho(studies, rho, tau, sig) {
+  const v = tau * tau + sig * sig, cv = rho * tau * tau, det = v * v - cv * cv;
+  const inv = [[v / det, -cv / det], [-cv / det, v / det]], A = [[0, 0], [0, 0]], b = [0, 0];
+  for (const s of studies) {
+    if (s.p != null && s.n != null) {
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) A[i][j] += inv[i][j];
+      b[0] += inv[0][0] * s.p + inv[0][1] * s.n; b[1] += inv[1][0] * s.p + inv[1][1] * s.n;
+    } else if (s.p != null) { A[0][0] += 1 / v; b[0] += s.p / v; }
+  }
+  const D = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+  const mp = (A[1][1] * b[0] - A[0][1] * b[1]) / D, mn = (A[0][0] * b[1] - A[1][0] * b[0]) / D;
+  let ll = 0;
+  for (const s of studies) {
+    if (s.p != null && s.n != null) {
+      const a = s.p - mp, c = s.n - mn;
+      ll -= .5 * (Math.log(det) + a * (inv[0][0] * a + inv[0][1] * c) + c * (inv[1][0] * a + inv[1][1] * c));
+    } else if (s.p != null) ll -= .5 * (Math.log(v) + (s.p - mp) ** 2 / v);
+  }
+  return { mp, mn, ll };
+}
+function estRho(studies, tau, sig) {
+  let best = { rho: 0, ll: -Infinity };
+  for (let k = -99; k <= 99; k++) { const f = fitRho(studies, k / 100, tau, sig); if (f.ll > best.ll) best = { rho: k / 100, ll: f.ll }; }
+  return best.rho;
+}
+
+// ---------- Small SVG helpers ----------
+function mk(parent, tag, attrs = {}, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (tag === "text" && attrs.fill) e.style.fill = attrs.fill;  // beats the stylesheet's default text color
+  if (text != null) e.textContent = text;
+  parent.appendChild(e); return e;
+}
+const vis = (e, on) => e.classList.toggle("off", !on);
+const place = (g, x, y) => { g.style.transform = `translate(${x}px, ${y}px)`; };
+function drawLine(line, x1, y1, x2, y2, on) {
+  const same = line.dataset.k === [x1, y1, x2, y2].join() && line.classList.contains("drawn");
+  line.setAttribute("x1", x1); line.setAttribute("y1", y1); line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+  line.dataset.k = [x1, y1, x2, y2].join();
+  vis(line, on);
+  if (!on) { line.classList.remove("drawn"); return; }
+  if (same) return;
+  line.classList.remove("drawn"); getComputedStyle(line).strokeDashoffset; line.classList.add("drawn");
+}
+function axes(svg, g, o) {
+  const grid = mk(svg, "g");
+  for (const t of o.ticks) {
+    mk(grid, "line", { x1: g.x(t), x2: g.x(t), y1: g.y(o.lo), y2: g.y(o.hi), stroke: "var(--grid)" });
+    mk(grid, "line", { x1: g.x(o.lo), x2: g.x(o.hi), y1: g.y(t), y2: g.y(t), stroke: "var(--grid)" });
+    mk(grid, "text", { x: g.x(t), y: g.y(o.lo) + 20, "text-anchor": "middle" }, o.fmt(t));
+    mk(grid, "text", { x: g.x(o.lo) - 8, y: g.y(t) + 4, "text-anchor": "end" }, o.fmt(t));
+  }
+  mk(grid, "text", { class: "ax", x: (g.x(o.lo) + g.x(o.hi)) / 2, y: g.y(o.lo) + 42, "text-anchor": "middle" }, o.xlab);
+  mk(grid, "text", { class: "ax", transform: `translate(14 ${(g.y(o.lo) + g.y(o.hi)) / 2}) rotate(-90)`, "text-anchor": "middle" }, o.ylab);
+}
+function scale(lo, hi, L, R, T, B) {
+  return { x: v => L + (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * (R - L),
+           y: v => B - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * (B - T) };
+}
+const MODELS = [
+  { key: "fixed", col: "var(--fixed)" }, { key: "zero", col: "var(--zero)" }, { key: "est", col: "var(--est)" }];
+function marker(svg, col) {
+  const g = mk(svg, "g", { class: "mv off" });
+  mk(g, "circle", { r: 8, fill: col, stroke: "var(--panel)", "stroke-width": 2.5 });
+  const t = mk(g, "text", { class: "lab halo", x: -14, y: 5, "text-anchor": "end", fill: col });
+  return { g, t };
+}
+function story(root, steps, render) {
+  const box = root.querySelector(".steps");
+  const els = steps.map(s => {
+    const d = document.createElement("div"); d.className = "step";
+    const [k, title] = s.title.split(" · ");
+    d.innerHTML = `<h3><span class="k" aria-hidden="true">${k}</span>${title}</h3><div class="sb">${s.body()}</div>`;
+    box.appendChild(d); return d;
+  });
+  let cur = -1;
+  function go(k, force) {
+    if (k === cur && !force) return;
+    cur = k; els.forEach((e, j) => e.classList.toggle("on", j === k));
+    render(k, els[k].querySelector(".sb"));
+  }
+  // A step becomes active when its top passes the middle of the screen (below the pinned chart on phones).
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) go(els.indexOf(e.target)); }),
+                                      { rootMargin: matchMedia("(max-width:879px) and (min-height:561px)").matches ? "-66% 0px -33% 0px" : "-50% 0px -49% 0px" });
+  els.forEach(e => io.observe(e));
+  go(0);
+  return { refresh: k => { els[k].querySelector(".sb").innerHTML = steps[k].body(); go(k, true); } };
+}
+
+// ---------- Part 1: schools ----------
+(() => {
+  const TAU = 10, SIG = 5;
+  const SCHOOLS = [[84, 70], [80, 78], [74, 60], [70, 76], [64, 56], [60, 68], [56, 52], [52, 62]];
+  const WHO = { weaker: [4, 5, 6, 7], mix: [1, 3, 4, 6] };
+  const avg = a => a.reduce((s, x) => s + x, 0) / a.length;
+  function scenario(skip) {
+    const st = SCHOOLS.map(([p, n], i) => ({ p, n: skip.includes(i) ? null : n }));
+    const comp = st.filter(s => s.n != null), rho = estRho(st, TAU, SIG);
+    return { skip, rho, cx: avg(comp.map(s => s.p)), cy: avg(comp.map(s => s.n)),
+             fixed: fitRho(st, -1, TAU, SIG), zero: fitRho(st, 0, TAU, SIG), est: fitRho(st, rho, TAU, SIG) };
+  }
+  const S = { weaker: scenario(WHO.weaker), mix: scenario(WHO.mix) };
+  const FULL = fitRho(SCHOOLS.map(([p, n]) => ({ p, n })), 0, TAU, SIG);
+  const r0 = x => x.toFixed(0);
+  let who = "weaker";
+
+  const svg = document.getElementById("plot-schools");
+  const g = scale(40, 92, 64, 548, 14, 408);
+  axes(svg, g, { lo: 40, hi: 92, ticks: [40, 50, 60, 70, 80, 90], fmt: String, xlab: "Reading score", ylab: "Math score" });
+  const bench = mk(svg, "g", { class: "t" });
+  mk(bench, "line", { x1: g.x(40), x2: g.x(92), y1: g.y(FULL.mn), y2: g.y(FULL.mn), stroke: "var(--fg)", "stroke-dasharray": "6 5", opacity: .55 });
+  mk(bench, "text", { class: "halo", x: g.x(92) - 4, y: g.y(FULL.mn) + 18, "text-anchor": "end", fill: "var(--fg)" }, `Full-data math average ${r0(FULL.mn)}`);
+  const readAvg = mk(svg, "g", { class: "t off" });
+  mk(readAvg, "line", { x1: g.x(FULL.mp), x2: g.x(FULL.mp), y1: g.y(40), y2: g.y(92), stroke: "var(--fg)", "stroke-dasharray": "2 4", opacity: .55 });
+  mk(readAvg, "text", { class: "halo", x: g.x(FULL.mp) - 6, y: g.y(92) + 12, "text-anchor": "end" }, `Reading average, all schools ${r0(FULL.mp)}`);
+  const schools = SCHOOLS.map(([p, n]) => {
+    const ghost = mk(svg, "circle", { class: "t off", cx: g.x(p), cy: g.y(n), r: 7, fill: "none", stroke: "var(--muted)", "stroke-dasharray": "3 3" });
+    const tick = mk(svg, "line", { class: "t off", x1: g.x(p), x2: g.x(p), y1: g.y(40) - 16, y2: g.y(40), stroke: "var(--dot)", "stroke-width": 3, "stroke-linecap": "round" });
+    const dot = mk(svg, "circle", { class: "t", cx: g.x(p), cy: g.y(n), r: 7, fill: "var(--dot)", "fill-opacity": .78 });
+    return { ghost, tick, dot };
+  });
+  const lines = Object.fromEntries(MODELS.map(m => [m.key, mk(svg, "line", { class: "ln off", pathLength: 1, stroke: m.col, "stroke-width": 3.5, "stroke-linecap": "round" })]));
+  const ring = mk(svg, "g", { class: "mv off" });
+  mk(ring, "circle", { r: 7, fill: "var(--panel)", stroke: "var(--fg)", "stroke-width": 2.5 });
+  const ringLab = mk(ring, "text", { class: "halo t", x: 0, y: 26, "text-anchor": "middle" }, "Average of schools with both scores");
+  const marks = Object.fromEntries(MODELS.map(m => [m.key, marker(svg, m.col)]));
+  const NAME = { fixed: "Fixed total", zero: "No link", est: "Link estimated" };
+
+  const STEPS = [
+    { title: "1 · Every school took both tests",
+      body: () => `<p>Good readers tend to be good at math. The district's math average is ${r0(FULL.mn)}.</p>` },
+    { title: "2 · The weaker schools skip math",
+      body: () => `<p>Their math scores (faint circles) are gone; their reading scores remain (marks along the bottom). The math scores left come from stronger schools (ring).</p>` },
+    { title: "3 · Fixed total",
+      body: () => `<p><b class="mfixed">Reading + math is the same in every school,</b> so weak readers must be strong at math. Estimate: ${r0(S.weaker.fixed.mn)}.</p>` },
+    { title: "4 · No link",
+      body: () => `<p><b class="mzero">Reading says nothing about math,</b> so the model averages the math scores left. Estimate: ${r0(S.weaker.zero.mn)}.</p>` },
+    { title: "5 · Link estimated",
+      body: () => `<p><b class="mest">The complete schools show that reading and math rise together.</b> Estimate: ${r0(S.weaker.est.mn)}.</p>` },
+    { title: "6 · Who skipped matters",
+      body: () => {
+        const s = S[who];
+        return `<div class="seg" role="group" aria-label="Who skipped the math test"><button data-who="weaker" aria-pressed="${who === "weaker"}">Weaker schools skip</button><button data-who="mix" aria-pressed="${who === "mix"}">A mix skips</button></div>
+          <table class="res"><tr><th>Math average</th><th class="n">Estimate</th></tr>
+          <tr><td>Full data</td><td class="n">${r0(FULL.mn)}</td></tr>
+          ${MODELS.map(m => `<tr><td class="m${m.key}">${NAME[m.key]}</td><td class="n">${r0(s[m.key].mn)}</td></tr>`).join("")}</table>
+          <p>${who === "mix" ? "If the schools that skip are a mix, all three agree. The fixed total misleads when the schools that report math differ systematically from the rest."
+                             : "If the weaker schools skip, the fixed total is furthest off."}</p>`;
+      } },
+  ];
+
+  function render(i) {
+    const s = i === 5 ? S[who] : S.weaker, hidden = i >= 1 ? s.skip : [];
+    schools.forEach((sc, k) => {
+      const h = hidden.includes(k);
+      vis(sc.dot, !h); vis(sc.ghost, h); vis(sc.tick, h);
+    });
+    vis(readAvg, i >= 1); vis(ring, i >= 1); place(ring, g.x(s.cx), g.y(s.cy));
+    vis(ringLab, !(i === 5 && who === "mix"));
+    const shown = i === 2 ? ["fixed"] : i === 3 ? ["zero"] : i === 4 ? ["est"] : i === 5 ? ["fixed", "zero", "est"] : [];
+    const together = i === 5 && Math.max(...MODELS.map(m => s[m.key].mn)) - Math.min(...MODELS.map(m => s[m.key].mn)) < .6;
+    for (const m of MODELS) {
+      const on = shown.includes(m.key), f = s[m.key];
+      drawLine(lines[m.key], g.x(s.cx), g.y(s.cy), g.x(f.mp), g.y(f.mn), on && !together);
+      vis(marks[m.key].g, on && (!together || m.key === "est"));
+      place(marks[m.key].g, g.x(f.mp), g.y(f.mn));
+      marks[m.key].t.textContent = together ? `All three: ${r0(f.mn)}` : `${NAME[m.key]}: ${r0(f.mn)}`;
+    }
+  }
+  const root = document.getElementById("story-schools"), api = story(root, STEPS, render);
+  root.addEventListener("click", e => {
+    const b = e.target.closest(".seg button");
+    if (!b) return;
+    who = b.dataset.who; api.refresh(5);
+    root.querySelector(`.seg button[data-who="${who}"]`).focus();
+  });
+})();
+
+// ---------- Why a shared intercept fixes the total ----------
+(() => {
+  const svg = document.getElementById("plot-intercept"), slider = document.getElementById("u"), out = document.getElementById("uout");
+  const P0 = -.30, N0 = .30, LO = -.65, HI = .65, Y = 58;
+  const fmt = v => (v < 0 ? "−" : v > 0 ? "+" : "") + Math.abs(v).toFixed(2).replace(/^0/, "");
+  const x = v => 30 + (v - LO) / (HI - LO) * 500;
+  mk(svg, "text", { x: x(LO), y: 18 }, "← less prejudice");
+  mk(svg, "text", { x: x(HI), y: 18, "text-anchor": "end" }, "more prejudice →");
+  mk(svg, "line", { x1: x(LO), x2: x(HI), y1: Y, y2: Y, stroke: "var(--muted)" });
+  for (const t of [-.6, -.4, -.2, 0, .2, .4, .6]) {
+    mk(svg, "line", { x1: x(t), x2: x(t), y1: Y - 4, y2: Y + 4, stroke: "var(--muted)" });
+    mk(svg, "text", { x: x(t), y: Y + 22, "text-anchor": "middle" }, t === 0 ? "0" : fmt(t).replace(/0$/, ""));
+  }
+  mk(svg, "text", { x: x(0), y: Y + 40, "text-anchor": "middle" }, "Association with prejudice (Fisher z), as the model scores it");
+  for (const v of [P0, N0]) mk(svg, "circle", { cx: x(v), cy: Y, r: 8, fill: "none", stroke: "var(--muted)", "stroke-dasharray": "3 3" });
+  const dot = (col, lab) => { const g = mk(svg, "g"); mk(g, "circle", { r: 9, fill: col, stroke: "var(--panel)", "stroke-width": 2 });
+    mk(g, "text", { class: "lab halo", y: -16, "text-anchor": "middle", fill: col }, lab); return g; };
+  const dp = dot("var(--pos)", "Positive contact"), dn = dot("var(--neg)", "Negative contact");
+  const B = 132, H = 26, SC = 500 / .6;  // strength bar: total of .6 spans the full width
+  mk(svg, "text", { x: 30, y: B - 8 }, "Strength of each association (positive contact sign-reversed)");
+  const bp = mk(svg, "rect", { y: B, height: H, fill: "var(--pos)", rx: 3 }), bn = mk(svg, "rect", { y: B, height: H, fill: "var(--neg)", rx: 3 });
+  const tp = mk(svg, "text", { y: B + 18, fill: "var(--bartext)", "font-weight": 600 }), tn = mk(svg, "text", { y: B + 18, fill: "var(--bartext)", "font-weight": 600, "text-anchor": "end" });
+  const tot = mk(svg, "text", { class: "lab", x: 530, y: B + H + 22, "text-anchor": "end", fill: "var(--fg)" });
+  function draw() {
+    const u = slider.value / 100, p = P0 + u, n = N0 + u, sp = Math.abs(p), sn = Math.abs(n);
+    place(dp, x(p), Y); place(dn, x(n), Y);
+    bp.setAttribute("x", 30); bp.setAttribute("width", sp * SC);
+    bn.setAttribute("x", 30 + sp * SC); bn.setAttribute("width", sn * SC);
+    tp.setAttribute("x", 38); tp.textContent = `Positive ${fmt(sp).slice(1)}`;
+    tn.setAttribute("x", 522); tn.textContent = `Negative ${fmt(sn).slice(1)}`;
+    tot.textContent = `Total ${(sp + sn).toFixed(2).replace(/^0/, "")}, whatever the intercept`;
+    out.value = u === 0 ? "0" : fmt(u);
+    slider.setAttribute("aria-valuetext", `intercept ${out.value}: positive-contact strength ${fmt(sp).slice(1)}, negative-contact strength ${fmt(sn).slice(1)}, total ${(sp + sn).toFixed(2).replace(/^0/, "")}`);
+  }
+  slider.addEventListener("input", draw); draw();
+})();
+
+// ---------- Part 2: contact samples ----------
+(() => {
+  const D = DATA, F = D.fits, M = D.mean;
+  const f3 = x => (x < 0 ? "−" : "") + Math.abs(x).toFixed(3).replace(/^0/, "");
+  const f2 = x => (x < 0 ? "−" : "") + Math.abs(x).toFixed(2).replace(/^0/, "");
+  const NAME = { fixed: "Fixed total", zero: "No link", est: "Link estimated" };
+  const svg = document.getElementById("plot-contact");
+  const LO = -.7, HI = .85, g = scale(LO, HI, 64, 548, 14, 438);
+  axes(svg, g, { lo: LO, hi: HI, ticks: [-.6, -.4, -.2, 0, .2, .4, .6, .8], fmt: t => t === 0 ? "0" : f2(t).replace(/0$/, ""),
+                 xlab: "Positive contact: strength of association (r)", ylab: "Negative contact: strength (r)" });
+  mk(svg, "line", { x1: g.x(LO), y1: g.y(LO), x2: g.x(HI), y2: g.y(HI), stroke: "var(--muted)", "stroke-dasharray": "2 5" });
+  mk(svg, "text", { class: "halo", x: g.x(.83), y: g.y(.83) + 18, "text-anchor": "end" }, "equal strength");
+  const off = D.both.filter(([p, n]) => p < LO || n < LO);
+  const cloud = mk(svg, "g", { class: "t" });
+  for (const [p, n] of D.both) if (p >= LO && n >= LO) mk(cloud, "circle", { cx: g.x(p), cy: g.y(n), r: 4.5, fill: "var(--dot)", "fill-opacity": .5 });
+  if (off.length) mk(cloud, "text", { class: "halo", x: g.x(LO) + 4, y: g.y(-.3) }, `◀ off the chart: ${off.map(([p, n]) => f2(p) + ", " + f2(n)).join("; ")}`);
+  const rug = mk(svg, "g", { class: "t off" });
+  for (const p of D.pos) mk(rug, "line", { x1: g.x(p), x2: g.x(p), y1: g.y(LO) - 12, y2: g.y(LO), stroke: "var(--dot)", "stroke-opacity": .45 });
+  for (const n of D.neg) mk(rug, "line", { x1: g.x(LO) + 6, x2: g.x(LO) + 20, y1: g.y(n), y2: g.y(n), stroke: "var(--neg)", "stroke-width": 2 });
+  mk(rug, "line", { x1: g.x(M.pos_only), x2: g.x(M.pos_only), y1: g.y(LO) - 30, y2: g.y(LO), stroke: "var(--fg)", "stroke-width": 3, "stroke-linecap": "round" });
+  mk(rug, "text", { class: "halo", x: g.x(M.pos_only), y: g.y(LO) - 36, "text-anchor": "middle", fill: "var(--fg)" }, `Positive-only average ${f3(M.pos_only)}`);
+  const lines = Object.fromEntries(MODELS.map(m => [m.key, mk(svg, "line", { class: "ln off", pathLength: 1, stroke: m.col, "stroke-width": 3.5, "stroke-linecap": "round" })]));
+  const ring = mk(svg, "g", { class: "mv" });
+  place(ring, g.x(M.both_p), g.y(M.both_n));
+  mk(ring, "circle", { r: 7, fill: "var(--panel)", stroke: "var(--fg)", "stroke-width": 2.5 });
+  mk(ring, "text", { class: "halo", x: 12, y: 20, fill: "var(--fg)" }, "Both-valence average");
+  const marks = Object.fromEntries(MODELS.map(m => [m.key, marker(svg, m.col)]));
+  for (const m of MODELS) { place(marks[m.key].g, g.x(F[m.key].p), g.y(F[m.key].n)); marks[m.key].t.textContent = `${NAME[m.key]}: ${f3(F[m.key].n)}`; }
+
+  const STEPS = [
+    { title: "1 · 77 samples measured both",
+      body: () => `<p>Strong positive-contact associations go with strong negative-contact ones (<i>r</i> = ${f2(D.cor.trimmed)}; ${f2(D.cor.all)} with the outlier at lower left; the model estimates the link at ${f2(D.rho.sample)} between samples). On average, negative contact is the weaker: ${f3(M.both_n)} against ${f3(M.both_p)}.</p>` },
+    { title: "2 · 105 measured only positive contact",
+      body: () => `<p>Their associations are weaker (${f3(M.pos_only)}; marks along the bottom). Nine samples measured only negative contact (orange marks, left edge).</p>` },
+    { title: "3 · Fixed total (published specification)",
+      body: () => `<p><b class="mfixed">Weak positive-only samples imply strong negative-contact associations.</b> Estimate: ${f3(F.fixed.n)}, above both observed negative-contact averages (${f3(M.both_n)} and ${f3(M.neg_only)}).</p>` },
+    { title: "4 · No link",
+      body: () => `<p><b class="mzero">Positive-only samples say nothing about negative contact.</b> Estimate: ${f3(F.zero.n)}.</p>` },
+    { title: "5 · Link estimated",
+      body: () => `<p><b class="mest">Weak positive-only samples imply weak negative-contact associations.</b> Estimate: ${f3(F.est.n)}.</p>` },
+    { title: "6 · Three answers",
+      body: () => `<table class="res"><tr><th>Model</th><th class="n">Positive</th><th class="n">Negative</th><th class="n">Δ<i>r</i> [95% CI]</th></tr>
+        ${MODELS.map(m => { const f = F[m.key]; return `<tr><td class="m${m.key}">${NAME[m.key]}</td><td class="n">${f3(f.p)}</td><td class="n">${f3(f.n)}</td><td class="n">${f3(f.d)} [${f3(f.lo)}, ${f3(f.hi)}]</td></tr>`; }).join("")}</table>
+        <p>Strengths; Δ<i>r</i> is negative minus positive. The model that estimates the link fits far better (Supplement S3.4); its Δ<i>r</i> is slightly negative, with a CI that includes zero. In the 77 samples that measured both, which need no borrowing between valences, even the fixed total gives Δ<i>r</i> = ${f3(D.both_fixed)} (Table S12).</p>` },
+  ];
+  function render(i) {
+    vis(rug, i >= 1);
+    cloud.style.opacity = i >= 2 ? .35 : 1;
+    const shown = i === 2 ? ["fixed"] : i === 3 ? ["zero"] : i === 4 ? ["est"] : i === 5 ? ["fixed", "zero", "est"] : [];
+    for (const m of MODELS) {
+      const on = shown.includes(m.key), f = F[m.key];
+      drawLine(lines[m.key], g.x(M.both_p), g.y(M.both_n), g.x(f.p), g.y(f.n), on);
+      vis(marks[m.key].g, on);
+    }
+  }
+  story(document.getElementById("story-contact"), STEPS, render);
+})();
+</script>
+</body>
+</html>
